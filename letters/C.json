@@ -16,31 +16,31 @@
     0.91
   ],
   "index": [
-    0.175,
+    0.227,
     0.785,
     0.785
   ],
   "thumb": [
-    0.436,
-    0.785
+    0.593,
+    0.942
   ],
   "spread": {
-    "index": -0.05,
+    "index": -0.017,
     "middle": -0.08,
     "ring": -0.18,
     "pinky": -0.16,
-    "thumb": -0.698
+    "thumb": -0.977
   },
   "rotate": {
-    "thumb": -1.309,
+    "thumb": -1.187,
     "index": 0,
     "middle": 0,
     "ring": 0,
     "pinky": 0
   },
   "wrist": {
-    "turn": 0.175,
-    "tilt": 0.436,
-    "twist": -1.396
+    "turn": -0.279,
+    "tilt": -0.227,
+    "twist": 1.641
   }
 }
