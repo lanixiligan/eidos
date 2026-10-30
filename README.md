@@ -41,8 +41,9 @@ where they are used. You can use Eidos on its own for any hand poses.
 - **Transition preview:** from **Transition** on the toolbar under the hand,
   play one pose into another over a set duration (100–2000 ms), the way they
   can be shown in a row.
-- **Left and right hands:** poses are written once, for a right hand; the left
-  hand mirrors them.
+- **Left and right hands, mirrored:** the hand is drawn as its mirror image,
+  the way you see it when copying a signer who faces you. Poses are written
+  once, for a right hand; the left hand mirrors them.
 - **Sculpted hand:** gray, in dark mode and light mode alike. Drag to spin,
   middle-drag to move, scroll to zoom.
 - **Narrow screens and touch:** below 860px the hand stays pinned at the top
@@ -114,7 +115,7 @@ import { createHand } from './hand.js';
 
 const hand = createHand(document.getElementById('hand'), {
   mode: 'light',        // 'dark' or 'light' backdrop (the hand is gray in both)
-  side: 'right',        // or 'left' (mirrored)
+  side: 'right',        // or 'left'; either is drawn mirrored
   numbers: false,       // fingertip number badges
   background: false,    // transparent canvas over your own page
 });
@@ -128,7 +129,7 @@ The container needs a size (for example `width: 400px; height: 400px`).
 | Option | Default | |
 | --- | --- | --- |
 | `mode` | `'dark'` | `'dark'` or `'light'` backdrop; the hand is gray in both |
-| `side` | `'right'` | `'right'` or `'left'` |
+| `side` | `'right'` | `'right'` or `'left'`, drawn as its mirror image (the way you copy a signer who faces you) |
 | `numbers` | `true` | Show fingertip number badges |
 | `background` | `true` | `false` for a transparent canvas |
 | `controls` | `true` | Drag to spin, middle-drag to move, scroll to zoom |
@@ -141,7 +142,7 @@ The container needs a size (for example `width: 400px; height: 400px`).
 | `setPose(pose, { duration, instant })` | Ease to a pose; `duration` (ms) makes it a timed ease-in-out move, `instant: true` jumps. Throws on invalid data. |
 | `getPose()` | The pose the hand is moving to |
 | `setMode(mode)` / `getMode()` | Dark or light backdrop |
-| `setSide(side)` / `getSide()` | Right or left hand |
+| `setSide(side)` / `getSide()` | Right or left hand, drawn mirrored |
 | `setNumbersVisible(on)` | Show or hide fingertip numbers |
 | `highlightFinger(finger, on)` | Accent one fingertip badge |
 | `setTipsClickable(on)` | Let badges take clicks |

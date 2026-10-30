@@ -273,7 +273,7 @@ function poseSculptedHand(chains, state) {
  * @param {HTMLElement} container
  * @param {object} [options]
  * @param {'dark'|'light'} [options.mode='dark'] backdrop (the hand is gray in both)
- * @param {'right'|'left'} [options.side='right']
+ * @param {'right'|'left'} [options.side='right'] drawn as its mirror image
  * @param {boolean} [options.numbers=true] fingertip number badges
  * @param {boolean} [options.background=true] false for a transparent canvas
  * @param {boolean} [options.controls=true] drag to spin, middle-drag to move, scroll to zoom
@@ -390,7 +390,7 @@ export function createHand(container, options = {}) {
 
   // --- State ---
   let mode = MODES[initialMode] ? initialMode : 'dark';
-  let side = 'right';
+  let side = 'left'; // the rig as built; setSide(initialSide) below mirrors it for 'right'
   let target = normalizePose(initialPose);
   const state = clonePose(target);
   // A timed move to the target: { from, start, duration } while it runs
@@ -441,8 +441,10 @@ export function createHand(container, options = {}) {
     }
   }
 
-  // The rig is a right hand, so a left hand is handRoot mirrored across its
-  // local X axis. Every pose is mirrored with it, so poses need no left version.
+  // Each hand is drawn as its mirror image, the way you see it when copying a
+  // signer who faces you. The rig is a right hand, so the right hand is
+  // handRoot mirrored across its local X axis and the left hand is the rig
+  // as is. Every pose is mirrored with it, so poses need no left version.
   function setSide(next) {
     if (next !== 'left' && next !== 'right') throw new Error(`unknown side "${next}"`);
     if (next !== side) {
@@ -450,7 +452,7 @@ export function createHand(container, options = {}) {
       const q = handRoot.quaternion;
       q.set(q.x, -q.y, -q.z, q.w);
       if (resetTarget) resetTarget.set(resetTarget.x, -resetTarget.y, -resetTarget.z, resetTarget.w);
-      handRoot.scale.x = next === 'left' ? -1 : 1;
+      handRoot.scale.x = next === 'right' ? -1 : 1;
       side = next;
     }
   }
@@ -628,13 +630,13 @@ export function createHand(container, options = {}) {
     setTipsClickable(on) {
       container.classList.toggle('tips-clickable', on);
     },
-    /** Ease back to the starting angle (mirrored for a left hand), position and zoom. */
+    /** Ease back to the starting angle (mirrored with the hand), position and zoom. */
     resetView() {
       spinVelocity = 0;
       targetX = 0;
       targetY = homeY;
       targetZ = 0;
-      const yaw = side === 'left' ? -DEFAULT_YAW : DEFAULT_YAW;
+      const yaw = side === 'right' ? -DEFAULT_YAW : DEFAULT_YAW;
       resetTarget = new THREE.Quaternion().setFromAxisAngle(UP, yaw);
     },
     dispose() {

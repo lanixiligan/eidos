@@ -56,7 +56,9 @@ stands on its own: Sema is a use case and never part of the product's name.
 ## The pose format is a contract
 
 Sema and other apps read these files. Angles are in radians, `version` is 1,
-and a pose describes a right hand (a left hand is mirrored). Any change to
+and a pose describes a right hand (a left hand is mirrored). On screen,
+`hand.js` draws each hand as its mirror image, the way a learner copies a
+signer who faces them; that is display only. Any change to
 the format must update all four of these together: `src/pose.js`
 (`normalizePose`/`serializePose`), `docs/POSE_FORMAT.md`,
 `docs/pose.schema.json` and the README example. A breaking change bumps
