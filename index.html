@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Eidos</title>
+    <meta name="description" content="Eidos is a studio for posing a 3D hand finger by finger and saving each pose as a reusable handshape." />
+    <link rel="icon" href="data:," />
+    <script>
+      // Pick dark/light before first paint: saved choice, else system setting
+      (function () {
+        var mode = null;
+        try {
+          mode = localStorage.getItem('hand-mode');
+        } catch (e) {}
+        if (mode !== 'dark' && mode !== 'light') {
+          mode = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        }
+        document.documentElement.dataset.mode = mode;
+      })();
+    </script>
+  </head>
+  <body>
+    <!-- The page grid; src/App.jsx renders the panels into it -->
+    <div id="app"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
