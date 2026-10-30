@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "pose.schema.json",
+  "title": "Hand pose",
+  "description": "Finger bends for one hand pose, in radians. Written for a right hand; a left hand mirrors it. See POSE_FORMAT.md.",
+  "type": "object",
+  "required": ["pinky", "ring", "middle", "index", "thumb", "spread"],
+  "properties": {
+    "version": { "const": 1 },
+    "pinky": { "$ref": "#/$defs/finger" },
+    "ring": { "$ref": "#/$defs/finger" },
+    "middle": { "$ref": "#/$defs/finger" },
+    "index": { "$ref": "#/$defs/finger" },
+    "thumb": {
+      "description": "[bend, tip]",
+      "type": "array",
+      "prefixItems": [{ "type": "number" }, { "type": "number" }],
+      "minItems": 2
+    },
+    "spread": {
+      "type": "object",
+      "required": ["index", "middle", "ring", "pinky"],
+      "properties": {
+        "index": { "type": "number" },
+        "middle": { "type": "number" },
+        "ring": { "type": "number" },
+        "pinky": { "type": "number", "description": "Positive tilts toward the pinky side" },
+        "thumb": { "type": "number", "default": 0, "description": "Positive swings across the palm" }
+      }
+    },
+    "rotate": {
+      "type": "object",
+      "properties": {
+        "thumb": { "type": "number", "default": 0, "description": "About the thumb's length; positive turns the pad toward the fingers" },
+        "index": { "$ref": "#/$defs/fingerRotate" },
+        "middle": { "$ref": "#/$defs/fingerRotate" },
+        "ring": { "$ref": "#/$defs/fingerRotate" },
+        "pinky": { "$ref": "#/$defs/fingerRotate" }
+      }
+    },
+    "wrist": {
+      "description": "Whole-hand rotation, applied twist, then tilt, then turn, about the middle of the hand. All zero is upright with the palm facing the viewer.",
+      "type": "object",
+      "properties": {
+        "turn": { "type": "number", "default": 0, "description": "In the palm's plane; positive toward the pinky side, ±π points the fingers down" },
+        "tilt": { "type": "number", "default": 0, "description": "Positive tips the fingers toward the palm side" },
+        "twist": { "type": "number", "default": 0, "description": "About the forearm; positive turns the palm toward the thumb side" }
+      }
+    }
+  },
+  "$defs": {
+    "fingerRotate": {
+      "type": "number",
+      "default": 0,
+      "description": "About the finger's length, from the base knuckle; positive turns the pad toward the thumb side"
+    },
+    "finger": {
+      "description": "[base, middle, tip] bend; 0 is straight, positive curls toward the palm",
+      "type": "array",
+      "prefixItems": [{ "type": "number" }, { "type": "number" }, { "type": "number" }],
+      "minItems": 3
+    }
+  }
+}
