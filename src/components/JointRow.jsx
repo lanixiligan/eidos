@@ -1,14 +1,18 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { useCommitEvent } from '../hooks/useCommitEvent.js';
 import { DEG, controlName, setAngle, shownDegrees, stepFrom } from '../lib/joints.js';
+import { Flap } from './Flap.jsx';
 
 const STEP = 5; // degrees per up or down key; Shift for FINE_STEP
 const FINE_STEP = 1;
+const VALUE_CELLS = 5; // "−180°"
 
 // The value beside a joint's name: type an exact angle, or step it with the
-// up and down keys. Retyping the shown whole degree keeps the exact value.
-function ValueField({ label, degrees, onApply, onCommit }) {
+// up and down keys. Retyping the shown whole degree keeps the exact value;
+// text that isn't a number puts the angle back and says why.
+function ValueField({ label, degrees, still, onApply, onCommit, onReport }) {
   const inputRef = useRef(null);
+  const [typing, setTyping] = useState(false);
   const [draft, setDraft] = useState(null); // text being typed; null shows the angle
   const cancelled = useRef(false);
   const reselect = useRef(false);
@@ -37,37 +41,55 @@ function ValueField({ label, degrees, onApply, onCommit }) {
   }
 
   function onBlur() {
-    const deg = parseFloat((draft ?? '').replace(',', '.'));
+    const text = (draft ?? '').trim();
+    const deg = parseFloat(text.replace(',', '.'));
     if (!cancelled.current && Number.isFinite(deg) && deg !== degrees) {
       onApply(deg);
       onCommit();
+    } else if (!cancelled.current && text && !Number.isFinite(deg)) {
+      onReport(`"${text}" isn't a number, so ${label} stays at ${degrees}°.`, true);
     }
     cancelled.current = false;
     setDraft(null);
   }
 
+  // At rest the angle reads in flap cells; focused, the field shows over them
   return (
-    <input
-      ref={inputRef}
-      className="joint-value"
-      type="text"
-      inputMode="decimal"
-      spellCheck={false}
-      autoComplete="off"
-      aria-label={`${label}, exact degrees`}
-      value={draft ?? `${degrees}°`}
-      onFocus={(e) => e.currentTarget.select()}
-      onChange={(e) => setDraft(e.target.value)}
-      onKeyDown={onKeyDown}
-      onBlur={onBlur}
-    />
+    <span className={typing ? 'flap-field is-typing' : 'flap-field'}>
+      <Flap text={`${degrees}°`.replace('-', '−')} cells={VALUE_CELLS} align="right" still={still} />
+      <input
+        ref={inputRef}
+        className="flap-input joint-value"
+        type="text"
+        inputMode="decimal"
+        spellCheck={false}
+        autoComplete="off"
+        aria-label={`${label}, exact degrees`}
+        value={draft ?? `${degrees}°`}
+        onFocus={(e) => {
+          setTyping(true);
+          e.currentTarget.select();
+        }}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={onKeyDown}
+        onBlur={() => {
+          setTyping(false);
+          onBlur();
+        }}
+      />
+    </span>
   );
 }
 
 // One row per joint: name and value, then a slider with its range under it
-export function JointRow({ group, control, pose, editPose, commitEdit }) {
+export function JointRow({ group, control, pose, editPose, commitEdit, onReport }) {
   const rangeRef = useRef(null);
-  useCommitEvent(rangeRef, commitEdit);
+  // While the slider is dragged the angle changes without flipping its cells
+  const [scrubbing, setScrubbing] = useState(false);
+  useCommitEvent(rangeRef, () => {
+    setScrubbing(false);
+    commitEdit();
+  });
 
   const label = controlName(group, control);
   const degrees = shownDegrees(group, control, pose);
@@ -89,7 +111,7 @@ export function JointRow({ group, control, pose, editPose, commitEdit }) {
           {control.label}
           {control.hint && <small>{control.hint}</small>}
         </span>
-        <ValueField label={label} degrees={degrees} onApply={apply} onCommit={commitEdit} />
+        <ValueField label={label} degrees={degrees} still={scrubbing} onApply={apply} onCommit={commitEdit} onReport={onReport} />
       </div>
       <input
         ref={rangeRef}
@@ -102,6 +124,9 @@ export function JointRow({ group, control, pose, editPose, commitEdit }) {
         aria-label={label}
         aria-valuetext={control.format(control.get(pose))}
         style={{ '--fill': `${((parked - min) / (max - min)) * 100}%` }}
+        onPointerDown={() => setScrubbing(true)}
+        onPointerUp={() => setScrubbing(false)}
+        onPointerCancel={() => setScrubbing(false)}
         onChange={(e) => apply(e.target.valueAsNumber)}
       />
       <div className="joint-limits" aria-hidden="true">

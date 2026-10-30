@@ -1,13 +1,16 @@
-import { useImperativeHandle, useRef, useState } from 'react';
+import { useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { EDITOR_GROUPS, groupActions, resetAllFingers } from '../lib/joints.js';
 import { FINGER_NUMBERS } from '../pose.js';
 import { FileActions } from './FileActions.jsx';
+import { Flap } from './Flap.jsx';
 import { JointRow } from './JointRow.jsx';
-import { ResetIcon } from './icons.jsx';
+import { AlertIcon, ResetIcon } from './icons.jsx';
+
+const tabId = (finger) => `finger-tab-${finger}`;
 
 // Finger tabs, numbered like the fingertips on the hand (the hand rotation
-// gets ↻). Arrow keys move between them, like any tab list.
+// is H). Arrow keys move between them, like any tab list.
 function FingerTabs({ active, onSelect, onHighlight }) {
   const tabs = useRef({});
 
@@ -22,16 +25,17 @@ function FingerTabs({ active, onSelect, onHighlight }) {
   }
 
   return (
-    <div className="segmented tabs" role="tablist" aria-labelledby="finger-label" onKeyDown={onKeyDown}>
+    <div className="tabs" role="tablist" aria-label="Finger" onKeyDown={onKeyDown}>
       {EDITOR_GROUPS.map(({ finger, tab, title }) => {
         const selected = finger === active;
         return (
           <button
             key={finger}
+            id={tabId(finger)}
             ref={(el) => {
               tabs.current[finger] = el;
             }}
-            className={selected ? 'active' : undefined}
+            className={selected ? 'tab active' : 'tab'}
             type="button"
             role="tab"
             aria-controls="joint-controls"
@@ -42,10 +46,8 @@ function FingerTabs({ active, onSelect, onHighlight }) {
             onPointerEnter={() => onHighlight(finger, true)}
             onPointerLeave={() => onHighlight(finger, false)}
           >
-            <span className="tab-number" aria-hidden="true">
-              {FINGER_NUMBERS[finger] ?? '↻'}
-            </span>
-            {tab ?? title}
+            <Flap text={String(FINGER_NUMBERS[finger] ?? 'H')} size="sm" />
+            <span className="tab-label">{tab ?? title}</span>
           </button>
         );
       })}
@@ -53,9 +55,68 @@ function FingerTabs({ active, onSelect, onHighlight }) {
   );
 }
 
+// "Reset all fingers" throws away the work on five fingers at once, so it sits
+// apart from the per-finger resets and asks first, in place. Keep fingers
+// takes the focus, Escape cancels, and the focus goes back to the button.
+function ResetAllFingers({ onReset }) {
+  const [asking, setAsking] = useState(false);
+  const opener = useRef(null);
+  const keep = useRef(null);
+  const asked = useRef(false);
+
+  useEffect(() => {
+    if (asking) keep.current.focus();
+    else if (asked.current) opener.current.focus();
+    asked.current = asking;
+  }, [asking]);
+
+  if (!asking) {
+    return (
+      <div className="footer-row">
+        <span className="board-label">All fingers</span>
+        <button ref={opener} className="btn" type="button" title="Straighten every finger; asks first" onClick={() => setAsking(true)}>
+          <ResetIcon size={14} />
+          Reset all fingers…
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="reset-warning"
+      role="alertdialog"
+      aria-labelledby="reset-warning-text"
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') setAsking(false);
+      }}
+    >
+      <p id="reset-warning-text">
+        <AlertIcon size={16} />
+        <span>Straighten all five fingers? The hand rotation stays, and Ctrl+Z undoes it.</span>
+      </p>
+      <div className="pair">
+        <button ref={keep} className="btn" type="button" onClick={() => setAsking(false)}>
+          Keep fingers
+        </button>
+        <button
+          className="btn btn-primary"
+          type="button"
+          onClick={() => {
+            setAsking(false);
+            onReset();
+          }}
+        >
+          Reset all fingers
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // The pose editor panel. `ref` gets { jumpToFinger(finger) }, used when a
 // fingertip number on the hand is clicked.
-export function PoseEditor({ ref, editor, name, onNameChange, onHighlight, files }) {
+export function PoseEditor({ ref, editor, onHighlight, onReport, files }) {
   const { pose, editPose, loadPose, commitEdit } = editor;
   const [activeFinger, setActiveFinger] = useState(EDITOR_GROUPS[0].finger);
   const joints = useRef(null);
@@ -88,48 +149,31 @@ export function PoseEditor({ ref, editor, name, onNameChange, onHighlight, files
   function resetAll() {
     loadPose(resetAllFingers(pose));
     commitEdit();
+    onReport('Straightened all five fingers. Ctrl+Z undoes it.');
   }
 
   return (
-    <aside className="inspector" aria-label="Pose editor">
-      <div className="inspector-header">
-        <h2>Pose editor</h2>
-      </div>
+    <aside className="inspector" aria-labelledby="pose-editor-title">
+      <h2 id="pose-editor-title" className="visually-hidden">
+        Pose editor
+      </h2>
+
+      <FingerTabs active={activeFinger} onSelect={selectFinger} onHighlight={onHighlight} />
 
       <div className="inspector-body">
-        <div className="field">
-          <label className="field-label" htmlFor="pose-name">
-            Name
-          </label>
-          <input
-            id="pose-name"
-            className="text-input"
-            type="text"
-            placeholder="e.g. A"
-            maxLength={24}
-            autoComplete="off"
-            value={name}
-            onChange={(e) => onNameChange(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') files.onSave();
-            }}
-          />
+        {/* The shown finger's shortcuts; resetting every finger lives in the
+            footer, away from them */}
+        <div className="finger-actions">
+          {groupActions(group).map((action) => (
+            <button key={action.text} className="link-btn" type="button" title={action.title} onClick={() => runAction(action.apply)}>
+              {action.text}
+            </button>
+          ))}
         </div>
 
-        <div className="field">
-          <div className="field-head">
-            <span id="finger-label" className="field-label">
-              Finger
-            </span>
-            <span className="field-actions">
-              {groupActions(group).map((action) => (
-                <button key={action.text} className="link-btn" type="button" title={action.title} onClick={() => runAction(action.apply)}>
-                  {action.text}
-                </button>
-              ))}
-            </span>
-          </div>
-          <FingerTabs active={activeFinger} onSelect={selectFinger} onHighlight={onHighlight} />
+        <div className="joint-head" aria-hidden="true">
+          <span>Joint</span>
+          <span>Angle</span>
         </div>
 
         {/* Lights up the shown finger on the hand while pointed at or focused */}
@@ -138,7 +182,7 @@ export function PoseEditor({ ref, editor, name, onNameChange, onHighlight, files
           ref={joints}
           className="joint-controls"
           role="tabpanel"
-          aria-labelledby="finger-label"
+          aria-labelledby={tabId(activeFinger)}
           onPointerEnter={() => onHighlight(activeFinger, true)}
           onPointerLeave={(e) => {
             if (!e.currentTarget.contains(document.activeElement)) onHighlight(activeFinger, false);
@@ -157,19 +201,22 @@ export function PoseEditor({ ref, editor, name, onNameChange, onHighlight, files
               pose={pose}
               editPose={editPose}
               commitEdit={commitEdit}
+              onReport={onReport}
             />
           ))}
         </div>
 
-        <div className="editor-help">
-          <button className="btn btn-small" type="button" title="Straighten every finger; the hand rotation stays" onClick={resetAll}>
-            <ResetIcon size={14} />
-            Reset all fingers
-          </button>
-        </div>
+        {/* The ways to set an angle that a slider doesn't show */}
+        <p className="editor-help">
+          Click an angle to type it exactly. <kbd>↑</kbd> <kbd>↓</kbd> step it by 5°, or 1° with <kbd>Shift</kbd>.
+          Double-click a joint name to set it to 0°.
+        </p>
       </div>
 
-      <FileActions {...files} />
+      <div className="inspector-footer">
+        <FileActions {...files} />
+        <ResetAllFingers onReset={resetAll} />
+      </div>
     </aside>
   );
 }

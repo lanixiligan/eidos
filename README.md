@@ -7,26 +7,36 @@ It is a side project of [Sema](https://github.com/lanixiligan/sema), a sign
 language learning app: Eidos is where Sema's handshapes are made, and Sema is
 where they are used. You can use Eidos on its own for any hand poses.
 
-![The editor with the letter B: letters on the left, finger controls on the right, numbered fingertips on the hand](docs/screenshot.png)
+![The editor with the letter B: the pose name in split-flap cells at the top, the letter board on the left, finger tabs and joint angles in flap cells on the right, numbered fingertips on the hand](docs/screenshot.png)
 
 ## Features
 
-- **Pose editor:** name the pose, pick a finger (Thumb … Pinky, or Hand for
-  the hand rotation) and set its joints. Angles are shown in degrees; signed
-  angles name their positive direction (`+ pinky`). Click a number on the
-  hand to jump to that finger.
+- **A departure-board editor:** the pose name, whether it's saved, the finger
+  numbers and every angle sit in split-flap cells that flip into place when
+  they change.
+- **Pose editor:** name the pose in the top bar, pick a finger (Thumb …
+  Pinky, or Hand for the hand rotation) and set its joints. Angles are shown
+  in degrees; signed angles name their positive direction (`+ pinky`). Click
+  a number on the hand to jump to that finger.
+- **The letter board:** letters and saved poses as board rows (code, pose,
+  state); the open one is highlighted, and ← and → step through them.
 - **Hand rotation:** turn, tilt and twist the whole hand, stored in the pose,
   for poses that point sideways or down.
-- **A slider per joint**, with its range shown underneath. Click the value
-  to type an exact angle, past the slider's ends too (poses have no limits),
-  or step it with the up and down keys (5°, Shift for 1°).
-- **Undo / redo** on the toolbar (Ctrl+Z, Ctrl+Shift+Z), per-finger reset,
-  and double-click a joint name to set it to 0°. Choosing a sign turns the
-  view back to its starting angle.
-- **Pose files:** download a pose as `.json`, copy it, import files (or drop
-  or paste JSON anywhere), and **export everything** as a zip ready for
-  `letters/`.
-- **Private by choice:** **Delete all site data**, under the saved poses,
+- **A slider per joint**, with its range shown underneath. Click an angle
+  to type it exactly, past the slider's ends too (poses have no limits), or
+  step it with the up and down keys (5°, Shift for 1°). These keys are
+  listed under the joints.
+- **Undo / redo** in the top bar (Ctrl+Z, Ctrl+Shift+Z), reset for the shown
+  finger under the finger tabs, and double-click a joint name to set it to
+  0°. **Reset all fingers…** sits apart, at the foot of the editor, and asks
+  before it straightens all five. Choosing a sign turns the view back to its
+  starting angle.
+- **Pose files:** **Save** in the top bar (Ctrl+S) keeps the pose in the
+  browser; **Download** or **Copy JSON** under the editor; **Import** (or
+  drop or paste JSON anywhere) and **Export all**, a zip ready for
+  `letters/`, at the foot of the board. The strip over the hand reports each
+  result and marks anything that didn't work.
+- **Private by choice:** **Delete all site data**, at the foot of the board,
   removes your saved poses and settings from the browser.
 - **Transition preview:** from **Transition** on the toolbar under the hand,
   play one pose into another over a set duration (100–2000 ms), the way they
@@ -35,6 +45,9 @@ where they are used. You can use Eidos on its own for any hand poses.
   hand mirrors them.
 - **Sculpted hand:** dark mode: white, light mode: black. Drag to spin,
   middle-drag to move, scroll to zoom.
+- **Narrow screens and touch:** below 860px the hand stays pinned at the top
+  while the library and editor scroll beneath it; on touch screens the
+  controls grow to finger-sized targets.
 
 ## Run locally
 
@@ -62,7 +75,7 @@ Then open <http://localhost:5173>.
    at rest.
 2. Shape each finger in the pose editor on the right.
 3. Name the pose (for a letter, use the letter: `A`) and **Save** it in the
-   browser, or **Download** it as `.json`.
+   browser (Ctrl+S), or **Download** it as `.json`.
 
 Saved poses live in your browser's local storage. To put them in the repo,
 use **Export all** (a zip) and unzip it into `letters/`. See

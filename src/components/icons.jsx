@@ -51,3 +51,31 @@ export function ResetIcon({ size }) {
     </Icon>
   );
 }
+
+export function CloseIcon({ size }) {
+  return (
+    <Icon size={size}>
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </Icon>
+  );
+}
+
+// Status line marks: done, or something to look at
+export function CheckIcon({ size }) {
+  return (
+    <Icon size={size}>
+      <path d="M20 6 9 17l-5-5" />
+    </Icon>
+  );
+}
+
+export function AlertIcon({ size }) {
+  return (
+    <Icon size={size}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 8v4" />
+      <path d="M12 16h.01" />
+    </Icon>
+  );
+}

@@ -23,9 +23,13 @@ stands on its own: Sema is a use case and never part of the product's name.
   first paint, and `src/main.jsx` mounts the app into `#app`, the page grid.
 - `src/App.jsx`: the state the panels share (pose library, files, transition
   preview, view settings, page-wide shortcuts), in numbered sections.
-- `src/components/`: one component per panel: `TopBar`, `Library`, `Stage`
-  (toolbar and `TransitionPopover`) and `PoseEditor` (`JointRow`,
-  `FileActions`).
+- `src/components/`: one component per panel: `TopBar` (pose name, save
+  state, undo, redo, Save), `Library` (the letter board, with Import and
+  Export all), `Stage` (status strip, toolbar and `TransitionPopover`) and
+  `PoseEditor` (`JointRow`, `FileActions`). `Flap` sets text in split-flap
+  cells for all of them.
+- `src/fonts/`: Barlow and Barlow Condensed (SIL OFL, `OFL.txt`), served with
+  the page so nothing loads from a font host.
 - `src/hooks/`: `usePoseEditor` (the pose being edited, with undo and redo),
   `useHand` (creates the 3D hand and keeps it in sync with React state) and
   `useCommitEvent`.
@@ -66,9 +70,10 @@ ends.
   `hand.js`, `pose.js` and `zip.js` free of React. Match the existing style:
   2-space indent, single quotes, short comments that say why, and the
   matching section headers in `App.jsx`.
-- UI is monochrome. Colours are tokens on `:root` in `src/style.css`, dark by
+- UI is monochrome (black to white) and set like a departure board; see
+  `docs/DESIGN.md`. Colours are tokens on `:root` in `src/style.css`, dark by
   default, with light overrides under `:root[data-mode="light"]`. Use the
-  tokens, not raw colours.
+  tokens, not raw colours. No rounded corners.
 - The editor shows degrees and stores radians. Signed angles name their
   positive direction (`+ pinky`). Wrist angles wrap into ±180°.
 - Every edit made by hand goes through `editPose(change)` or `loadPose(pose)`

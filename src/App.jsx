@@ -8,7 +8,7 @@ import { TopBar } from './components/TopBar.jsx';
 import { useHand } from './hooks/useHand.js';
 import { usePoseEditor } from './hooks/usePoseEditor.js';
 import { downloadBlob, fileNameFor, readPoseFiles } from './lib/files.js';
-import { SAVED_PREFIX, findPose, loadLetterPoses, loadSavedPoses, poseName, storeSavedPoses } from './lib/library.js';
+import { LETTER_PREFIX, SAVED_PREFIX, findPose, loadLetterPoses, loadSavedPoses, poseName, storeSavedPoses } from './lib/library.js';
 import { clearSettings, readSetting, writeSetting } from './lib/settings.js';
 import { RELAXED_POSE, normalizePose, serializePose } from './pose.js';
 import { createZip } from './zip.js';
@@ -24,7 +24,12 @@ export default function App() {
   // The editor is always open: it starts from a hand at rest
   const editor = usePoseEditor(RELAXED_POSE);
   const [name, setName] = useState('');
-  const [status, setStatus] = useState('');
+
+  // The status line under the file buttons: what the last action did.
+  // `problem` marks something that didn't work, which stays at full strength;
+  // `id` restarts the fade when the same message comes twice.
+  const [status, setStatus] = useState({ text: '', problem: false, id: 0 });
+  const report = (text, problem = false) => setStatus((s) => ({ text, problem, id: s.id + 1 }));
 
   const [mode, setMode] = useState(initialMode);
   const [side, setSide] = useState(initialSide);
@@ -80,6 +85,15 @@ export default function App() {
     updateSaved(next);
   }
 
+  // ← and → open the previous or next row of the board: letters, then saved
+  function stepBoard(offset) {
+    const keys = [...letters.map((letter) => LETTER_PREFIX + letter.name), ...Object.keys(saved).map((n) => SAVED_PREFIX + n)];
+    if (!keys.length) return;
+    const i = keys.indexOf(editor.active);
+    const next = i === -1 ? (offset > 0 ? 0 : keys.length - 1) : (i + offset + keys.length) % keys.length;
+    selectPose(keys[next]);
+  }
+
   // Leave nothing of Eidos in this browser: saved poses and every setting. The
   // page keeps its current look until reload.
   function deleteAllData() {
@@ -88,23 +102,29 @@ export default function App() {
     if (!confirm(`Delete all Eidos data in this browser? This removes ${poses} and your settings, and can't be undone.`)) return;
     const ok = clearSettings();
     setSaved({});
-    setStatus(ok ? 'Deleted all Eidos data from this browser.' : 'Browser storage is unavailable, so nothing was stored.');
+    if (ok) report('Deleted all Eidos data from this browser.');
+    else report('Browser storage is unavailable, so nothing was stored.', true);
   }
 
   // ---------------------------------------------------------------------------
   // 3. Pose editor: saving
   // ---------------------------------------------------------------------------
+  // What the top bar says about the pose: a library pose as opened, saved,
+  // or changed since (any edit clears the open row)
+  const saveState = editor.active?.startsWith(SAVED_PREFIX)
+    ? { label: 'SAVED', saved: true }
+    : editor.active?.startsWith(LETTER_PREFIX)
+      ? { label: 'LETTER', saved: true }
+      : { label: 'NOT SAVED', saved: false };
+
   function savePose() {
     const poseName = name.trim() || `Pose ${Object.keys(saved).length + 1}`;
     const existed = Object.hasOwn(saved, poseName);
     const ok = updateSaved({ ...saved, [poseName]: editor.pose });
     editor.markActive(SAVED_PREFIX + poseName);
     setName(poseName);
-    setStatus(
-      ok
-        ? `${existed ? 'Updated' : 'Saved'} "${poseName}".`
-        : `Saved "${poseName}" for this session only (browser storage is unavailable).`
-    );
+    if (ok) report(`${existed ? 'Updated' : 'Saved'} "${poseName}".`);
+    else report(`Saved "${poseName}" for this session only: browser storage is unavailable. Download it to keep it.`, true);
   }
 
   // ---------------------------------------------------------------------------
@@ -113,17 +133,17 @@ export default function App() {
   function downloadPose() {
     const fileName = fileNameFor(name);
     downloadBlob(new Blob([serializePose(editor.pose)], { type: 'application/json' }), fileName);
-    setStatus(`Downloaded ${fileName}.`);
+    report(`Downloaded ${fileName}.`);
   }
 
   async function copyPose() {
     const json = serializePose(editor.pose);
     try {
       await navigator.clipboard.writeText(json);
-      setStatus('Pose JSON copied to clipboard.');
+      report('Pose JSON copied to clipboard.');
     } catch {
       console.log(json);
-      setStatus('Clipboard blocked; pose JSON printed to the console.');
+      report('The browser blocked the clipboard, so the pose JSON is in the console instead.', true);
     }
   }
 
@@ -134,13 +154,13 @@ export default function App() {
     letters.forEach(({ name: letter, pose }) => byFile.set(fileNameFor(letter), pose));
     Object.entries(saved).forEach(([poseName, pose]) => byFile.set(fileNameFor(poseName), pose));
     if (byFile.size === 0) {
-      setStatus('Nothing to export yet: save a pose first.');
+      report('Nothing to export yet: save a pose first.', true);
       return;
     }
     const files = [...byFile].map(([fileName, pose]) => ({ name: fileName, data: serializePose(pose) }));
     files.push({ name: 'index.json', data: JSON.stringify([...byFile.keys()], null, 2) + '\n' });
     downloadBlob(createZip(files), 'letters.zip');
-    setStatus(`Exported ${byFile.size} pose(s) with index.json. Unzip into letters/ to replace it.`);
+    report(`Exported ${byFile.size} pose(s) with index.json. Unzip into letters/ to replace it.`);
   }
 
   // Load one pose into the editor
@@ -172,7 +192,7 @@ export default function App() {
     } else if (!ok.length) {
       message += '.';
     }
-    setStatus(message);
+    report(message, failed.length > 0);
   }
 
   // Drop .json files anywhere on the page
@@ -205,7 +225,7 @@ export default function App() {
   // Paste pose JSON (e.g. from a letter file) while not typing in a text field
   const onPaste = useEffectEvent((pose) => {
     loadIntoEditor(pose);
-    setStatus('Pasted pose loaded. Name it and save it to keep it.');
+    report('Pasted pose loaded. Name it and save it to keep it.');
   });
   useEffect(() => {
     const onPasteText = (e) => {
@@ -246,15 +266,29 @@ export default function App() {
     writeSetting('hand-side', next);
   }
 
-  // Keyboard: Ctrl+Z / Ctrl+Shift+Z (or Ctrl+Y) undo and redo in the editor.
-  // Text fields keep their own shortcuts.
+  // Keyboard: Ctrl+S saves the pose, from anywhere (the browser's own Save
+  // Page is no use here). Ctrl+Z / Ctrl+Shift+Z (or Ctrl+Y) undo and redo in
+  // the editor; text fields keep their own undo.
   const onKeyDown = useEffectEvent((e) => {
-    if (e.target.matches('input[type="text"], textarea, select')) return;
     const key = e.key.toLowerCase();
+    if ((e.ctrlKey || e.metaKey) && key === 's') {
+      e.preventDefault();
+      savePose();
+      return;
+    }
+    if (e.target.matches('input[type="text"], textarea, select')) return;
     if ((e.ctrlKey || e.metaKey) && (key === 'z' || key === 'y')) {
       e.preventDefault();
       if (key === 'y' || e.shiftKey) editor.redo();
       else editor.undo();
+      return;
+    }
+    // ← and → step through the board, unless a slider or the finger tabs
+    // already use them
+    const step = { arrowleft: -1, arrowright: 1 }[key];
+    if (step && !e.ctrlKey && !e.metaKey && !e.altKey && !e.defaultPrevented && !e.target.matches('input, [role="tab"]')) {
+      e.preventDefault();
+      stepBoard(step);
     }
   });
   useEffect(() => {
@@ -265,7 +299,15 @@ export default function App() {
 
   return (
     <>
-      <TopBar mode={mode} onModeChange={chooseMode} />
+      <TopBar
+        mode={mode}
+        onModeChange={chooseMode}
+        name={name}
+        onNameChange={setName}
+        saveState={saveState}
+        history={editor}
+        onSave={savePose}
+      />
       <Library
         active={editor.active}
         letters={letters}
@@ -273,11 +315,13 @@ export default function App() {
         saved={saved}
         onSelect={selectPose}
         onDelete={deleteSavedPose}
+        onImport={importFiles}
+        onExportAll={exportAll}
         onDeleteAll={deleteAllData}
       />
       <Stage
         stageRef={stageRef}
-        history={editor}
+        status={status}
         side={side}
         onSideChange={chooseSide}
         numbers={numbers}
@@ -288,17 +332,9 @@ export default function App() {
       <PoseEditor
         ref={editorPanel}
         editor={editor}
-        name={name}
-        onNameChange={setName}
         onHighlight={hand.highlightFinger}
-        files={{
-          status,
-          onSave: savePose,
-          onDownload: downloadPose,
-          onCopy: copyPose,
-          onImport: importFiles,
-          onExportAll: exportAll,
-        }}
+        onReport={report}
+        files={{ onDownload: downloadPose, onCopy: copyPose }}
       />
     </>
   );
