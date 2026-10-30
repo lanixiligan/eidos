@@ -43,7 +43,7 @@ where they are used. You can use Eidos on its own for any hand poses.
   can be shown in a row.
 - **Left and right hands:** poses are written once, for a right hand; the left
   hand mirrors them.
-- **Sculpted hand:** dark mode: white, light mode: black. Drag to spin,
+- **Sculpted hand:** gray, in dark mode and light mode alike. Drag to spin,
   middle-drag to move, scroll to zoom.
 - **Narrow screens and touch:** below 860px the hand stays pinned at the top
   while the library and editor scroll beneath it; on touch screens the
@@ -113,7 +113,7 @@ installed or mapped, then:
 import { createHand } from './hand.js';
 
 const hand = createHand(document.getElementById('hand'), {
-  mode: 'light',        // 'dark' (white hand) or 'light' (black hand)
+  mode: 'light',        // 'dark' or 'light' backdrop (the hand is gray in both)
   side: 'right',        // or 'left' (mirrored)
   numbers: false,       // fingertip number badges
   background: false,    // transparent canvas over your own page
@@ -127,7 +127,7 @@ The container needs a size (for example `width: 400px; height: 400px`).
 
 | Option | Default | |
 | --- | --- | --- |
-| `mode` | `'dark'` | `'dark'` (white hand) or `'light'` (black hand) |
+| `mode` | `'dark'` | `'dark'` or `'light'` backdrop; the hand is gray in both |
 | `side` | `'right'` | `'right'` or `'left'` |
 | `numbers` | `true` | Show fingertip number badges |
 | `background` | `true` | `false` for a transparent canvas |
@@ -140,7 +140,7 @@ The container needs a size (for example `width: 400px; height: 400px`).
 | --- | --- |
 | `setPose(pose, { duration, instant })` | Ease to a pose; `duration` (ms) makes it a timed ease-in-out move, `instant: true` jumps. Throws on invalid data. |
 | `getPose()` | The pose the hand is moving to |
-| `setMode(mode)` / `getMode()` | Dark or light look |
+| `setMode(mode)` / `getMode()` | Dark or light backdrop |
 | `setSide(side)` / `getSide()` | Right or left hand |
 | `setNumbersVisible(on)` | Show or hide fingertip numbers |
 | `highlightFinger(finger, on)` | Accent one fingertip badge |

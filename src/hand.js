@@ -21,30 +21,22 @@ const PIVOT_Y = 0.9;
 const UP = new THREE.Vector3(0, 1, 0);
 
 // ---------------------------------------------------------------------------
-// Color themes & dark/light mode
+// Hand finish & dark/light mode
 // ---------------------------------------------------------------------------
-const THEMES = {
-  white: {
-    shellColor: 0xf3f4f6,
-    roughness: 0.16,
-    metalness: 0.12,
-    clearcoat: 0.8,
-    clearcoatRoughness: 0.1,
-  },
-  black: {
-    shellColor: 0x181e28,
-    roughness: 0.28,
-    metalness: 0.75,
-    clearcoat: 0.4,
-    clearcoatRoughness: 0.2,
-  },
+// One gray finish for both modes: mid gray stands out on a dark backdrop and
+// a light one alike
+const FINISH = {
+  shellColor: 0x8a8a8a,
+  roughness: 0.3,
+  metalness: 0.2,
+  clearcoat: 0.6,
+  clearcoatRoughness: 0.15,
 };
 
-// Each page mode pairs a backdrop with the hand color that contrasts with it
+// Each page mode sets the backdrop; the hand looks the same in both
 const MODES = {
-  dark: { theme: 'white', background: 0x050811, fillColor: 0xc084fc },
-  // Neutral fill: the metallic black finish picks up the magenta tint strongly
-  light: { theme: 'black', background: 0xe6eaf0, fillColor: 0xffffff },
+  dark: { background: 0x050811 },
+  light: { background: 0xe6eaf0 },
 };
 
 // Base styles for the canvas and fingertip badges. Injected first in <head> so
@@ -90,27 +82,28 @@ function createStudioEnvironment(renderer) {
   canvas.height = 512;
   const ctx = canvas.getContext('2d');
 
-  // Deep neutral studio gradient
+  // Deep neutral studio gradient. Every softbox is white too, so the gray
+  // hand reflects no tint.
   const bgGrad = ctx.createLinearGradient(0, 0, 0, 512);
-  bgGrad.addColorStop(0, '#1a2234');
-  bgGrad.addColorStop(0.5, '#0b0f19');
-  bgGrad.addColorStop(1, '#030712');
+  bgGrad.addColorStop(0, '#222222');
+  bgGrad.addColorStop(0.5, '#111111');
+  bgGrad.addColorStop(1, '#060606');
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, 1024, 512);
 
   // Softbox 1: Main top-left bright key light
   const g1 = ctx.createRadialGradient(260, 160, 10, 260, 160, 240);
   g1.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
-  g1.addColorStop(0.3, 'rgba(240, 246, 255, 0.85)');
-  g1.addColorStop(0.7, 'rgba(180, 210, 255, 0.25)');
+  g1.addColorStop(0.3, 'rgba(245, 245, 245, 0.85)');
+  g1.addColorStop(0.7, 'rgba(200, 200, 200, 0.25)');
   g1.addColorStop(1, 'rgba(0, 0, 0, 0)');
   ctx.fillStyle = g1;
   ctx.fillRect(0, 0, 550, 400);
 
-  // Softbox 2: Cool cyan rim light right
+  // Softbox 2: Rim light right
   const g2 = ctx.createRadialGradient(820, 240, 15, 820, 240, 260);
-  g2.addColorStop(0, 'rgba(56, 189, 248, 0.95)');
-  g2.addColorStop(0.5, 'rgba(14, 165, 233, 0.4)');
+  g2.addColorStop(0, 'rgba(230, 230, 230, 0.8)');
+  g2.addColorStop(0.5, 'rgba(160, 160, 160, 0.35)');
   g2.addColorStop(1, 'rgba(0, 0, 0, 0)');
   ctx.fillStyle = g2;
   ctx.fillRect(520, 40, 504, 450);
@@ -140,16 +133,15 @@ function createStudioEnvironment(renderer) {
 function createMaterials() {
   return {
     // Physical shell material with sleek clearcoat lacquer
-    shell: new THREE.MeshPhysicalMaterial({ reflectivity: 0.9 }),
+    shell: new THREE.MeshPhysicalMaterial({
+      reflectivity: 0.9,
+      color: FINISH.shellColor,
+      roughness: FINISH.roughness,
+      metalness: FINISH.metalness,
+      clearcoat: FINISH.clearcoat,
+      clearcoatRoughness: FINISH.clearcoatRoughness,
+    }),
   };
-}
-
-function applyTheme(mats, t) {
-  mats.shell.color.setHex(t.shellColor);
-  mats.shell.roughness = t.roughness;
-  mats.shell.metalness = t.metalness;
-  mats.shell.clearcoat = t.clearcoat;
-  mats.shell.clearcoatRoughness = t.clearcoatRoughness;
 }
 
 // ---------------------------------------------------------------------------
@@ -280,7 +272,7 @@ function poseSculptedHand(chains, state) {
  *
  * @param {HTMLElement} container
  * @param {object} [options]
- * @param {'dark'|'light'} [options.mode='dark'] backdrop + hand color (white / black hand)
+ * @param {'dark'|'light'} [options.mode='dark'] backdrop (the hand is gray in both)
  * @param {'right'|'left'} [options.side='right']
  * @param {boolean} [options.numbers=true] fingertip number badges
  * @param {boolean} [options.background=true] false for a transparent canvas
@@ -345,15 +337,15 @@ export function createHand(container, options = {}) {
   keyLight.position.set(5, 7, 6);
   scene.add(keyLight);
 
-  // Cyan rim light
-  const cyanRim = new THREE.DirectionalLight(0x38bdf8, 3.2);
-  cyanRim.position.set(-8, 3, -4);
-  scene.add(cyanRim);
+  // Rim light from behind, to pick out the hand's edge
+  const rimLight = new THREE.DirectionalLight(0xffffff, 2.4);
+  rimLight.position.set(-8, 3, -4);
+  scene.add(rimLight);
 
-  // Magenta fill light
-  const magentaFill = new THREE.DirectionalLight(0xc084fc, 1.4);
-  magentaFill.position.set(6, -4, -3);
-  scene.add(magentaFill);
+  // Fill light, neutral so the gray stays gray
+  const fillLight = new THREE.DirectionalLight(0xffffff, 1.4);
+  fillLight.position.set(6, -4, -3);
+  scene.add(fillLight);
 
   // --- Hands ---
   const mats = createMaterials();
@@ -443,12 +435,10 @@ export function createHand(container, options = {}) {
     if (!MODES[next]) throw new Error(`unknown mode "${next}"`);
     mode = next;
     const m = MODES[mode];
-    applyTheme(mats, THEMES[m.theme]);
     if (background) {
       scene.background.setHex(m.background);
       scene.fog.color.setHex(m.background);
     }
-    magentaFill.color.setHex(m.fillColor);
   }
 
   // The rig is a right hand, so a left hand is handRoot mirrored across its

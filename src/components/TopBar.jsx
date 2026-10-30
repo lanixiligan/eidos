@@ -4,8 +4,8 @@ import { RedoIcon, UndoIcon } from './icons.jsx';
 import { Segmented } from './Segmented.jsx';
 
 const MODES = [
-  { value: 'dark', label: 'Dark', title: 'Dark theme with a white hand' },
-  { value: 'light', label: 'Light', title: 'Light theme with a black hand' },
+  { value: 'dark', label: 'Dark', title: 'Dark theme' },
+  { value: 'light', label: 'Light', title: 'Light theme' },
 ];
 
 export const NAME_LENGTH = 24;
