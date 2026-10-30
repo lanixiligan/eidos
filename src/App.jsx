@@ -222,13 +222,20 @@ export default function App() {
     };
   }, []);
 
-  // Paste pose JSON (e.g. from a letter file) while not typing in a text field
+  // Paste pose JSON (e.g. from a letter file) while not typing in a text field.
+  // On Linux, releasing the middle button pastes the selected text, and the
+  // middle button pans the hand, so a paste right after it is ignored.
   const onPaste = useEffectEvent((pose) => {
     loadIntoEditor(pose);
     report('Pasted pose loaded. Name it and save it to keep it.');
   });
   useEffect(() => {
+    let middleUp = -Infinity;
+    const onPointerUp = (e) => {
+      if (e.button === 1) middleUp = e.timeStamp;
+    };
     const onPasteText = (e) => {
+      if (e.timeStamp - middleUp < 500) return;
       if (e.target.matches('input[type="text"], textarea')) return;
       let pose;
       try {
@@ -239,8 +246,13 @@ export default function App() {
       e.preventDefault();
       onPaste(pose);
     };
+    // pointerup, not mouseup: the hand's controls cancel the mouse events
+    window.addEventListener('pointerup', onPointerUp, true);
     document.addEventListener('paste', onPasteText);
-    return () => document.removeEventListener('paste', onPasteText);
+    return () => {
+      window.removeEventListener('pointerup', onPointerUp, true);
+      document.removeEventListener('paste', onPasteText);
+    };
   }, []);
 
   // ---------------------------------------------------------------------------
