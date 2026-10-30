@@ -26,12 +26,12 @@ where they are used. You can use Eidos on its own for any hand poses.
   to type it exactly, past the slider's ends too (poses have no limits), or
   step it with the up and down keys (5°, Shift for 1°). These keys are
   listed under the joints.
-- **Undo / redo** in the top bar (Ctrl+Z, Ctrl+Shift+Z), reset for the shown
+- **Undo / redo** on the toolbar under the hand (Ctrl+Z, Ctrl+Shift+Z), reset for the shown
   finger under the finger tabs, and double-click a joint name to set it to
   0°. **Reset all fingers…** sits apart, at the foot of the editor, and asks
   before it straightens all five. Choosing a sign turns the view back to its
   starting angle.
-- **Pose files:** **Save** in the top bar (Ctrl+S) keeps the pose in the
+- **Pose files:** **Save** on the toolbar under the hand (Ctrl+S) keeps the pose in the
   browser; **Download** or **Copy JSON** under the editor; **Import** (or
   drop or paste JSON anywhere) and **Export all**, a zip ready for
   `letters/`, at the foot of the board. The strip over the hand reports each

@@ -24,8 +24,9 @@ stands on its own: Sema is a use case and never part of the product's name.
 - `src/App.jsx`: the state the panels share (pose library, files, transition
   preview, view settings, page-wide shortcuts), in numbered sections.
 - `src/components/`: one component per panel: `TopBar` (pose name, save
-  state, undo, redo, Save), `Library` (the letter board, with Import and
-  Export all), `Stage` (status strip, toolbar and `TransitionPopover`) and
+  state, mode), `Library` (the letter board, with Import and Export all),
+  `Stage` (status strip, the toolbar with undo, redo, Save and the view
+  controls, and `TransitionPopover`) and
   `PoseEditor` (`JointRow`, `FileActions`). `Flap` sets text in split-flap
   cells for all of them.
 - `src/fonts/`: Barlow and Barlow Condensed (SIL OFL, `OFL.txt`), served with

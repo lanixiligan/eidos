@@ -402,14 +402,18 @@ kbd {
 .stage-wrap {
   grid-area: stage;
   position: relative;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   background: var(--stage-bg);
 }
 
-/* The 3D hand fills the stage; hand.js sizes its canvas to this box */
+/* The 3D hand fills the stage between the status strip and the toolbar;
+   hand.js sizes its canvas to this box */
 #stage {
-  position: absolute;
-  inset: 0;
+  position: relative;
+  flex: 1;
+  min-height: 0;
 }
 
 /* Dragging a pose file over the page */
@@ -424,10 +428,7 @@ body.is-drop-target .stage-wrap::after {
 /* ----------------------------------------------------------- status strip */
 /* One board line over the hand: the last result, or how to move the view */
 .status-strip {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
+  order: -1; /* above #stage, which comes first in the markup */
   display: flex;
   align-items: center;
   min-height: 44px;
@@ -475,23 +476,25 @@ body.is-drop-target .stage-wrap::after {
   }
 }
 
+/* One board line under the hand, like the status strip over it. Docked, it
+   can wrap on a narrow stage without covering the hand. */
 .stage-toolbar {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 16px;
-  margin: 0 auto;
-  width: max-content;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
   gap: 6px;
-  max-width: calc(100% - 24px);
-  padding: 6px;
+  padding: 8px 12px;
   background: var(--board);
-  border: 1px solid var(--rule-strong);
-  box-shadow: var(--shadow);
+  border-top: 1px solid var(--rule);
+}
+
+/* Between the pose's actions and the view's */
+.toolbar-rule {
+  align-self: stretch;
+  width: 1px;
+  margin: 0 4px;
+  background: var(--rule-strong);
 }
 
 /* --------------------------------------------------------------- controls */
@@ -1056,7 +1059,7 @@ select:hover {
      beneath it */
   #app {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: 104px 42dvh auto auto;
+    grid-template-rows: 104px 50dvh auto auto;
     grid-template-areas:
       "top"
       "stage"
@@ -1149,10 +1152,9 @@ select:hover {
     overflow: visible;
   }
 
-  /* Keep the view toolbar on one row so it stays clear of the hand */
   .stage-toolbar {
-    bottom: 10px;
-    padding: 4px;
+    gap: 4px;
+    padding: 6px 8px;
   }
 
   .stage-toolbar .segmented button,
@@ -1213,18 +1215,17 @@ select:hover {
 }
 
 /* --------------------------------------------------------------- touch */
-/* Fingers need bigger targets than a mouse. The panels grow to 44px rows;
-   the stage toolbar keeps its size so it stays one row clear of the hand. */
+/* Fingers need bigger targets than a mouse: the controls grow to 44px */
 @media (pointer: coarse) {
-  :is(.topbar, .library, .inspector, .popover) :is(.btn, select) {
+  :is(.topbar, .stage-toolbar, .library, .inspector, .popover) :is(.btn, select) {
     height: 44px;
   }
 
-  :is(.topbar, .library, .inspector) .btn-icon {
+  :is(.topbar, .stage-toolbar, .library, .inspector) .btn-icon {
     width: 44px;
   }
 
-  .topbar .segmented button {
+  :is(.topbar, .stage-toolbar) .segmented button {
     height: 42px;
   }
 

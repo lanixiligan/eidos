@@ -275,8 +275,9 @@ stays in sentence case at reading size.
 A three-column board under a 72px top bar: the library (300px), the stage
 (fluid) and the editor (440px). The top bar is the pose's line: EIDOS in small
 flaps, POSE and its name in large flaps, the save state as a mark and flaps,
-then undo, redo, Save and the mode switch. A 44px status strip runs across the
-top of the stage; the view toolbar floats at its foot.
+then the mode switch. A 44px status strip runs across the top of the stage,
+and the toolbar is docked along its foot as a matching board line: undo, redo
+and Save, a rule, then the view (Left/Right, Numbers, Transition, Reset view).
 
 The library is a board: a CODE / POSE / STATE head, then 44px rows for letters
 and for poses saved in this browser, and a foot with the arrow-key hint,
@@ -286,10 +287,10 @@ key hint, and a footer of two labelled rows: THIS POSE (Download, Copy JSON)
 and ALL FINGERS (Reset all fingers…).
 
 Spacing runs 6, 8, 12, 16 and 20px. Below 860px everything stacks under a
-two-line 104px top bar, the stage pinned beneath it at 42dvh; each stacked panel
+two-line 104px top bar, the stage pinned beneath it at 50dvh; each stacked panel
 takes its full content height. On touch screens (`pointer: coarse`) buttons
-grow to 44px, board rows to 52px and the slider thumb to 14×32px; the stage
-toolbar keeps its size so it stays one row clear of the hand.
+grow to 44px, board rows to 52px and the slider thumb to 14×32px. The docked
+toolbar wraps onto a second row when the stage is narrow, never over the hand.
 
 ## Elevation & Depth
 
@@ -297,8 +298,8 @@ Flat. Panels are separated by 1px rules, not shadows; the only depth is in the
 flap itself (a darker lower leaf and a split).
 
 ### Shadow Vocabulary
-- **Float** (`--shadow`: 0 8px 24px at 0.5 alpha, 0.14 in light): the stage
-  toolbar and the transition popover, which hang over the hand.
+- **Float** (`--shadow`: 0 8px 24px at 0.5 alpha, 0.14 in light): the
+  transition popover, which hangs over the hand.
 - **Thumb** (`--shadow-thumb`: 0 1px 3px): the slider thumb on its track.
 
 ### Named Rules

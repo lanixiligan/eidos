@@ -317,7 +317,6 @@ export default function App() {
         name={name}
         onNameChange={setName}
         saveState={saveState}
-        history={editor}
         onSave={savePose}
       />
       <Library
@@ -334,6 +333,8 @@ export default function App() {
       <Stage
         stageRef={stageRef}
         status={status}
+        history={editor}
+        onSave={savePose}
         side={side}
         onSideChange={chooseSide}
         numbers={numbers}

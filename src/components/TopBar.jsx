@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Flap } from './Flap.jsx';
-import { RedoIcon, UndoIcon } from './icons.jsx';
 import { Segmented } from './Segmented.jsx';
 
 const MODES = [
@@ -11,9 +10,9 @@ const MODES = [
 export const NAME_LENGTH = 24;
 const NAME_CELLS = 8; // the board shows at least this many cells
 
-// The pose as a board line: its name in flap cells (click to type), whether
-// it's saved, and the actions on the pose as a whole
-export function TopBar({ mode, onModeChange, name, onNameChange, saveState, history, onSave }) {
+// The pose as a board line: its name in flap cells (click to type) and
+// whether it's saved. Undo, Redo and Save sit on the toolbar under the hand.
+export function TopBar({ mode, onModeChange, name, onNameChange, saveState, onSave }) {
   const [typing, setTyping] = useState(false);
   const atLimit = name.length >= NAME_LENGTH;
 
@@ -60,15 +59,6 @@ export function TopBar({ mode, onModeChange, name, onNameChange, saveState, hist
       </div>
 
       <div className="topbar-actions">
-        <button className="btn btn-icon" type="button" aria-label="Undo" title="Undo (Ctrl+Z)" disabled={!history.canUndo} onClick={history.undo}>
-          <UndoIcon />
-        </button>
-        <button className="btn btn-icon" type="button" aria-label="Redo" title="Redo (Ctrl+Shift+Z)" disabled={!history.canRedo} onClick={history.redo}>
-          <RedoIcon />
-        </button>
-        <button className="btn btn-primary save-btn" type="button" title="Save pose in this browser (Ctrl+S)" onClick={onSave}>
-          Save
-        </button>
         <Segmented label="Appearance" options={MODES} value={mode} onChange={onModeChange} />
       </div>
     </header>

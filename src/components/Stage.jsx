@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { AlertIcon, CheckIcon, PlayIcon, ResetIcon } from './icons.jsx';
+import { AlertIcon, CheckIcon, PlayIcon, RedoIcon, ResetIcon, UndoIcon } from './icons.jsx';
 import { Segmented } from './Segmented.jsx';
 import { TransitionPopover } from './TransitionPopover.jsx';
 
@@ -27,9 +27,9 @@ function StatusStrip({ status }) {
   );
 }
 
-// The 3D hand (drawn into #stage by hand.js), the message strip and the
-// view toolbar under it
-export function Stage({ stageRef, status, side, onSideChange, numbers, onNumbersChange, onResetView, transition }) {
+// The 3D hand (drawn into #stage by hand.js), the message strip over it and
+// the toolbar under it: the pose's undo, redo and save, then the view
+export function Stage({ stageRef, status, history, onSave, side, onSideChange, numbers, onNumbersChange, onResetView, transition }) {
   const transitionBtn = useRef(null);
   const [transitionOpen, setTransitionOpen] = useState(false);
 
@@ -39,7 +39,17 @@ export function Stage({ stageRef, status, side, onSideChange, numbers, onNumbers
 
       <StatusStrip status={status} />
 
-      <div className="stage-toolbar" role="toolbar" aria-label="View">
+      <div className="stage-toolbar" role="toolbar" aria-label="Pose and view">
+        <button className="btn btn-icon" type="button" aria-label="Undo" title="Undo (Ctrl+Z)" disabled={!history.canUndo} onClick={history.undo}>
+          <UndoIcon />
+        </button>
+        <button className="btn btn-icon" type="button" aria-label="Redo" title="Redo (Ctrl+Shift+Z)" disabled={!history.canRedo} onClick={history.redo}>
+          <RedoIcon />
+        </button>
+        <button className="btn btn-primary save-btn" type="button" title="Save pose in this browser (Ctrl+S)" onClick={onSave}>
+          Save
+        </button>
+        <span className="toolbar-rule" aria-hidden="true" />
         <Segmented label="Hand" options={SIDES} value={side} onChange={onSideChange} />
         <button className="btn" type="button" aria-pressed={numbers} title="Show a number on each fingertip" onClick={() => onNumbersChange(!numbers)}>
           Numbers
