@@ -600,8 +600,14 @@ body.is-drop-target .stage-wrap::after {
   white-space: nowrap;
 }
 
-.link-btn:hover {
+.link-btn:hover:not(:disabled) {
   background: var(--accent-soft);
+}
+
+.link-btn:disabled {
+  color: var(--text-faint);
+  text-decoration: none;
+  cursor: default;
 }
 
 .pair {
@@ -759,7 +765,7 @@ body.is-drop-target .stage-wrap::after {
 /* Finger tabs: a row of board cells, the chosen one inverted */
 .tabs {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(7, 1fr);
   flex: none;
   border-bottom: 1px solid var(--rule);
 }
@@ -816,6 +822,20 @@ body.is-drop-target .stage-wrap::after {
   justify-content: space-between;
   padding: 6px 0 8px;
   color: var(--text-faint);
+}
+
+/* The step of a movement the tabs edit, at the end of the shortcuts */
+.step-note {
+  align-self: center;
+  margin-left: auto;
+  padding-right: 8px;
+  color: var(--text-muted);
+}
+
+/* A heading inside the controls (the hand's position, after its rotation) */
+.joint-controls .joint-head {
+  padding-top: 18px;
+  border-top: 1px solid var(--rule);
 }
 
 /* The chosen finger's joints */
@@ -948,6 +968,24 @@ body.is-drop-target .stage-wrap::after {
   font-size: 14px;
   line-height: 1.8;
   color: var(--text-faint);
+}
+
+/* The Motion tab: the steps as board rows, full width like the library */
+.motion-steps {
+  margin: 0 -20px;
+}
+
+.motion-steps .board-select {
+  padding: 0 20px;
+}
+
+.step-time {
+  border-top: 0;
+}
+
+.play-motion {
+  width: 100%;
+  margin: 8px 0 16px;
 }
 
 /* This pose's files, then the whole-hand reset: a label, then its buttons */

@@ -120,7 +120,7 @@ export default function App() {
   function savePose() {
     const poseName = name.trim() || `Pose ${Object.keys(saved).length + 1}`;
     const existed = Object.hasOwn(saved, poseName);
-    const ok = updateSaved({ ...saved, [poseName]: editor.pose });
+    const ok = updateSaved({ ...saved, [poseName]: editor.document });
     editor.markActive(SAVED_PREFIX + poseName);
     setName(poseName);
     if (ok) report(`${existed ? 'Updated' : 'Saved'} "${poseName}".`);
@@ -132,12 +132,12 @@ export default function App() {
   // ---------------------------------------------------------------------------
   function downloadPose() {
     const fileName = fileNameFor(name);
-    downloadBlob(new Blob([serializePose(editor.pose)], { type: 'application/json' }), fileName);
+    downloadBlob(new Blob([serializePose(editor.document)], { type: 'application/json' }), fileName);
     report(`Downloaded ${fileName}.`);
   }
 
   async function copyPose() {
-    const json = serializePose(editor.pose);
+    const json = serializePose(editor.document);
     try {
       await navigator.clipboard.writeText(json);
       report('Pose JSON copied to clipboard.');
@@ -256,12 +256,17 @@ export default function App() {
   }, []);
 
   // ---------------------------------------------------------------------------
-  // 5. Transition preview
+  // 5. Transition and movement previews
   // ---------------------------------------------------------------------------
-  // Keys are library keys, or null for the pose being edited
+  // Keys are library keys, or null for the step being edited
   function playTransition(fromKey, toKey, duration) {
     const resolve = (key) => (key === null ? editor.pose : findPose(key, { letters, saved }));
     hand.playTransition(resolve(fromKey), resolve(toKey), duration);
+  }
+
+  // The movement being edited, from its first step to its last
+  function playMotion() {
+    hand.playMotion(editor.document);
   }
 
   // ---------------------------------------------------------------------------
@@ -347,6 +352,7 @@ export default function App() {
         editor={editor}
         onHighlight={hand.highlightFinger}
         onReport={report}
+        onPlayMotion={playMotion}
         files={{ onDownload: downloadPose, onCopy: copyPose }}
       />
     </>

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "pose.schema.json",
   "title": "Hand pose",
-  "description": "Finger bends for one hand pose, in radians. Written for a right hand; a left hand mirrors it. See POSE_FORMAT.md.",
+  "description": "Finger bends for one hand pose, in radians, with the hand's position and, for a sign that moves, the later steps of the movement. Written for a right hand; a left hand mirrors it. See POSE_FORMAT.md.",
   "type": "object",
   "required": ["pinky", "ring", "middle", "index", "thumb", "spread"],
   "properties": {
@@ -46,9 +46,47 @@
         "tilt": { "type": "number", "default": 0, "description": "Positive tips the fingers toward the palm side" },
         "twist": { "type": "number", "default": 0, "description": "About the forearm; positive turns the palm toward the thumb side" }
       }
+    },
+    "move": { "$ref": "#/$defs/move" },
+    "motion": {
+      "description": "The steps of a movement after the first (the pose's own fields), in order. An empty list is a still pose.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["duration", "pose"],
+        "properties": {
+          "duration": { "type": "number", "exclusiveMinimum": 0, "description": "Milliseconds to move from the step before into this one" },
+          "pose": { "$ref": "#/$defs/still" }
+        }
+      }
     }
   },
   "$defs": {
+    "still": {
+      "description": "The whole hand at one step: the same fields as a pose, without version or motion",
+      "type": "object",
+      "required": ["pinky", "ring", "middle", "index", "thumb", "spread"],
+      "properties": {
+        "pinky": { "$ref": "#/properties/pinky" },
+        "ring": { "$ref": "#/properties/ring" },
+        "middle": { "$ref": "#/properties/middle" },
+        "index": { "$ref": "#/properties/index" },
+        "thumb": { "$ref": "#/properties/thumb" },
+        "spread": { "$ref": "#/properties/spread" },
+        "rotate": { "$ref": "#/properties/rotate" },
+        "wrist": { "$ref": "#/properties/wrist" },
+        "move": { "$ref": "#/$defs/move" }
+      }
+    },
+    "move": {
+      "description": "Whole-hand position in hand lengths (wrist to middle fingertip), in the signer's directions. All zero is the resting place.",
+      "type": "object",
+      "properties": {
+        "side": { "type": "number", "default": 0, "description": "Positive moves out, away from the body's middle" },
+        "up": { "type": "number", "default": 0, "description": "Positive moves up" },
+        "forward": { "type": "number", "default": 0, "description": "Positive moves toward the viewer" }
+      }
+    },
     "fingerRotate": {
       "type": "number",
       "default": 0,
