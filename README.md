@@ -94,12 +94,16 @@ use **Export all** (a zip) and unzip it into `letters/`. See
   "thumb": [0.79, 0.69],
   "spread": { "index": -0.15, "middle": -0.03, "ring": -0.1, "pinky": 0.13, "thumb": -0.22 },
   "rotate": { "thumb": 0, "index": 0, "middle": 0, "ring": 0, "pinky": 0 },
-  "wrist": { "turn": 0, "tilt": 0, "twist": 0 }
+  "wrist": { "turn": 0, "tilt": 0, "twist": 0 },
+  "move": { "side": 0, "up": 0, "forward": 0 }
 }
 ```
 
 Angles are in radians. `wrist` rotates the whole hand, for poses that point
-sideways or down (`"turn": 3.142` points the fingers down). The full description is in
+sideways or down (`"turn": 3.142` points the fingers down), and `move` places
+it, in hand lengths. A sign that moves adds `motion`, a list of later steps,
+each `{ "duration": 400, "pose": { … } }`; the pose's own fields are the
+first step. The full description is in
 [docs/POSE_FORMAT.md](docs/POSE_FORMAT.md), and
 [docs/pose.schema.json](docs/pose.schema.json) is the JSON Schema.
 
@@ -151,7 +155,8 @@ The container needs a size (for example `width: 400px; height: 400px`).
 | `dispose()` | Stop rendering and free GPU resources |
 
 `pose.js` also exports `normalizePose` (validate a pose), `serializePose`
-(write one as JSON), `RELAXED_POSE` (the hand at rest) and `FINGER_NUMBERS`.
+(write one as JSON), `stillPose` and `motionSteps` (a pose's first step, or
+all of its steps), `RELAXED_POSE` (the hand at rest) and `FINGER_NUMBERS`.
 
 ## Project layout
 
