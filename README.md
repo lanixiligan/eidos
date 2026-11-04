@@ -145,6 +145,7 @@ The container needs a size (for example `width: 400px; height: 400px`).
 | --- | --- |
 | `setPose(pose, { duration, instant })` | Ease to a pose; `duration` (ms) makes it a timed ease-in-out move, `instant: true` jumps. Throws on invalid data. |
 | `getPose()` | The pose the hand is moving to |
+| `playMotion(pose)` | Play a pose's movement: jump to its first step, then move through its `motion` steps on time. Resolves `true` when it ends, `false` if `setPose` or another play cuts it short. |
 | `setMode(mode)` / `getMode()` | Dark or light backdrop |
 | `setSide(side)` / `getSide()` | Right or left hand, drawn mirrored |
 | `setNumbersVisible(on)` | Show or hide fingertip numbers |
