@@ -1,21 +1,24 @@
 // The editor's joint controls and their angle math.
 //
-// Editor controls work in radians (the pose format) but read out and turn in
-// degrees, with a direction word where the sign alone would be ambiguous.
-// The pose has no limits. Sliders need ends, so each joint has a range that
-// covers the letters; typed values can go past it.
-import { MathUtils } from 'three';
+// Editor controls work in the pose format's units (radians, hand lengths) but
+// read out and turn in whole degrees or hundredths of a hand length, with a
+// direction word where the sign alone would be ambiguous. The pose has no
+// limits. Sliders need ends, so each joint has a range that covers the
+// letters; typed values can go past it.
 import { FINGER_NUMBERS, clonePose, normalizePose } from '../pose.js';
 
-export const DEG = Math.PI / 180;
-const toDeg = (rad) => Math.round(MathUtils.radToDeg(rad));
-const formatBend = (v) => `${toDeg(v)}°`;
+// What one shown step is worth in the pose, and how it reads
+const ANGLE = { scale: Math.PI / 180, suffix: '°' };
+const LENGTH = { scale: 0.01, suffix: '%' }; // hundredths of a hand length
+export const unitOf = (control) => control.unit ?? ANGLE;
+
+const formatBend = (v) => `${Math.round(v / ANGLE.scale)}°`;
 // Values are shown signed, so the joint name says which way is positive
-const direction = (positive, negative) => ({
+const direction = (positive, negative, unit = ANGLE) => ({
   hint: `+ ${positive}`,
   format: (v) => {
-    const d = toDeg(v);
-    return d === 0 ? '0°' : `${Math.abs(d)}° ${d > 0 ? positive : negative}`;
+    const n = Math.round(v / unit.scale);
+    return n === 0 ? `0${unit.suffix}` : `${Math.abs(n)}${unit.suffix} ${n > 0 ? positive : negative}`;
   },
 });
 
@@ -48,18 +51,29 @@ const fingerControls = (key) => [
     get: (p) => p.rotate[key], set: (p, v) => (p.rotate[key] = v), ...direction('thumb', 'pinky') },
 ];
 
-// Whole-hand rotation, so a pose can point sideways or down. These are full
-// turns, so they wrap around at ±180° instead of growing past it.
-const WRIST_GROUP = { finger: 'wrist', tab: 'Hand', title: 'Hand rotation', wrap: true, controls: [
-  { label: 'Turn', min: -180, max: 180,
+// Whole-hand rotation, so a pose can point sideways or down, and position,
+// so a movement can carry the hand. Rotations are full turns, so they wrap
+// around at ±180° instead of growing past it. A control with a `section`
+// starts a new heading: [name, what its values are].
+const WRIST_GROUP = { finger: 'wrist', tab: 'Hand', title: 'Hand', head: 'Rotation', controls: [
+  { label: 'Turn', min: -180, max: 180, wrap: true,
     title: 'Turn in the palm\'s plane: 180° points the fingers down',
     get: (p) => p.wrist.turn, set: (p, v) => (p.wrist.turn = v), ...direction('pinky', 'thumb') },
-  { label: 'Tilt', min: -180, max: 180,
+  { label: 'Tilt', min: -180, max: 180, wrap: true,
     title: 'Tilt: fingers toward the palm side or toward the back of the hand',
     get: (p) => p.wrist.tilt, set: (p, v) => (p.wrist.tilt = v), ...direction('palm', 'back') },
-  { label: 'Twist', min: -180, max: 180,
+  { label: 'Twist', min: -180, max: 180, wrap: true,
     title: 'Twist about the forearm: palm toward the thumb side or the pinky side',
     get: (p) => p.wrist.twist, set: (p, v) => (p.wrist.twist = v), ...direction('thumb', 'pinky') },
+  { label: 'Side', min: -100, max: 100, unit: LENGTH, section: ['Position', '% of hand length'],
+    title: 'Move the whole hand sideways: out, away from the body\'s middle, or in',
+    get: (p) => p.move.side, set: (p, v) => (p.move.side = v), ...direction('out', 'in', LENGTH) },
+  { label: 'Height', min: -100, max: 100, unit: LENGTH,
+    title: 'Move the whole hand up or down',
+    get: (p) => p.move.up, set: (p, v) => (p.move.up = v), ...direction('up', 'down', LENGTH) },
+  { label: 'Depth', min: -100, max: 100, unit: LENGTH,
+    title: 'Move the whole hand forward, toward the viewer, or back',
+    get: (p) => p.move.forward, set: (p, v) => (p.move.forward = v), ...direction('forward', 'back', LENGTH) },
 ] };
 
 export const EDITOR_GROUPS = [
@@ -103,20 +117,22 @@ const wrapAngle = (rad) => {
 
 export const controlName = (group, control) => `${group.title} ${control.label.toLowerCase()}`;
 
-// The whole degree shown for a joint (full turns read within ±180°)
-export function shownDegrees(group, control, pose) {
-  const deg = toDeg(control.get(pose));
-  return group.wrap ? wrapDegrees(deg) : deg;
+// The whole number shown for a joint (full turns read within ±180°)
+export function shownValue(control, pose) {
+  const n = Math.round(control.get(pose) / unitOf(control).scale);
+  return control.wrap ? wrapDegrees(n) : n;
 }
 
-// Write one angle (radians) into a pose
-export function setAngle(group, control, pose, rad) {
-  control.set(pose, group.wrap ? wrapAngle(rad) : rad);
+// Write a shown value (degrees, or hundredths of a hand length) into a pose
+export function setValue(control, pose, value) {
+  const v = value * unitOf(control).scale;
+  control.set(pose, control.wrap ? wrapAngle(v) : v);
 }
 
 function resetFinger(pose, finger) {
   if (finger === 'wrist') {
     pose.wrist = { ...RESET_POSE.wrist };
+    pose.move = { ...RESET_POSE.move };
   } else if (finger === 'thumb') {
     pose.thumb = [...RESET_POSE.thumb];
     pose.spread.thumb = RESET_POSE.spread.thumb;
@@ -128,8 +144,8 @@ function resetFinger(pose, finger) {
   }
 }
 
-// Every finger straight; the hand rotation stays
-export const resetAllFingers = (pose) => ({ ...clonePose(RESET_POSE), wrist: pose.wrist });
+// Every finger straight; the hand rotation and position stay
+export const resetAllFingers = (pose) => ({ ...clonePose(RESET_POSE), wrist: pose.wrist, move: pose.move });
 
 // Shortcuts beside the finger tabs, for the shown finger only: each sets
 // some fields of the pose and keeps the rest
@@ -141,7 +157,7 @@ export function groupActions({ finger, tab, title }) {
   }
   actions.push({
     text: `Reset ${(tab ?? title).toLowerCase()}`,
-    title: finger in FINGER_NUMBERS ? `Straighten the ${title.toLowerCase()}` : 'Upright hand, no rotation',
+    title: finger in FINGER_NUMBERS ? `Straighten the ${title.toLowerCase()}` : 'Upright hand in its resting place',
     apply: (p) => resetFinger(p, finger),
   });
   return actions;

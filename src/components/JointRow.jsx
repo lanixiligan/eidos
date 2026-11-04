@@ -1,16 +1,16 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { useCommitEvent } from '../hooks/useCommitEvent.js';
-import { DEG, controlName, setAngle, shownDegrees, stepFrom } from '../lib/joints.js';
+import { controlName, setValue, shownValue, stepFrom, unitOf } from '../lib/joints.js';
 import { Flap } from './Flap.jsx';
 
-const STEP = 5; // degrees per up or down key; Shift for FINE_STEP
+const STEP = 5; // degrees (or hundredths) per up or down key; Shift for FINE_STEP
 const FINE_STEP = 1;
 const VALUE_CELLS = 5; // "−180°"
 
 // The value beside a joint's name: type an exact angle, or step it with the
-// up and down keys. Retyping the shown whole degree keeps the exact value;
+// up and down keys. Retyping the shown whole number keeps the exact value;
 // text that isn't a number puts the angle back and says why.
-function ValueField({ label, degrees, still, onApply, onCommit, onReport }) {
+function ValueField({ label, value, suffix, still, onApply, onCommit, onReport }) {
   const inputRef = useRef(null);
   const [typing, setTyping] = useState(false);
   const [draft, setDraft] = useState(null); // text being typed; null shows the angle
@@ -33,7 +33,7 @@ function ValueField({ label, degrees, still, onApply, onCommit, onReport }) {
       e.currentTarget.blur();
     } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
       e.preventDefault();
-      onApply(stepFrom(degrees, (e.key === 'ArrowUp' ? 1 : -1) * (e.shiftKey ? FINE_STEP : STEP)));
+      onApply(stepFrom(value, (e.key === 'ArrowUp' ? 1 : -1) * (e.shiftKey ? FINE_STEP : STEP)));
       onCommit();
       setDraft(null);
       reselect.current = true;
@@ -42,12 +42,12 @@ function ValueField({ label, degrees, still, onApply, onCommit, onReport }) {
 
   function onBlur() {
     const text = (draft ?? '').trim();
-    const deg = parseFloat(text.replace(',', '.'));
-    if (!cancelled.current && Number.isFinite(deg) && deg !== degrees) {
-      onApply(deg);
+    const typed = parseFloat(text.replace(',', '.'));
+    if (!cancelled.current && Number.isFinite(typed) && typed !== value) {
+      onApply(typed);
       onCommit();
-    } else if (!cancelled.current && text && !Number.isFinite(deg)) {
-      onReport(`"${text}" isn't a number, so ${label} stays at ${degrees}°.`, true);
+    } else if (!cancelled.current && text && !Number.isFinite(typed)) {
+      onReport(`"${text}" isn't a number, so ${label} stays at ${value}${suffix}.`, true);
     }
     cancelled.current = false;
     setDraft(null);
@@ -56,7 +56,7 @@ function ValueField({ label, degrees, still, onApply, onCommit, onReport }) {
   // At rest the angle reads in flap cells; focused, the field shows over them
   return (
     <span className={typing ? 'flap-field is-typing' : 'flap-field'}>
-      <Flap text={`${degrees}°`.replace('-', '−')} cells={VALUE_CELLS} align="right" still={still} />
+      <Flap text={`${value}${suffix}`.replace('-', '−')} cells={VALUE_CELLS} align="right" still={still} />
       <input
         ref={inputRef}
         className="flap-input joint-value"
@@ -64,8 +64,8 @@ function ValueField({ label, degrees, still, onApply, onCommit, onReport }) {
         inputMode="decimal"
         spellCheck={false}
         autoComplete="off"
-        aria-label={`${label}, exact degrees`}
-        value={draft ?? `${degrees}°`}
+        aria-label={`${label}, exact ${suffix === '°' ? 'degrees' : 'percent of hand length'}`}
+        value={draft ?? `${value}${suffix}`}
         onFocus={(e) => {
           setTyping(true);
           e.currentTarget.select();
@@ -92,13 +92,14 @@ export function JointRow({ group, control, pose, editPose, commitEdit, onReport 
   });
 
   const label = controlName(group, control);
-  const degrees = shownDegrees(group, control, pose);
-  const apply = (deg) => editPose((p) => setAngle(group, control, p, deg * DEG));
+  const value = shownValue(control, pose);
+  const { suffix } = unitOf(control);
+  const apply = (n) => editPose((p) => setValue(control, p, n));
   const { min, max } = control;
   // A value past the ends parks the thumb there; the field shows the real one
-  const parked = Math.min(max, Math.max(min, degrees));
+  const parked = Math.min(max, Math.max(min, value));
 
-  // Double-click the name to set the joint to 0°
+  // Double-click the name to set the joint to 0
   function zero() {
     apply(0);
     commitEdit();
@@ -111,7 +112,7 @@ export function JointRow({ group, control, pose, editPose, commitEdit, onReport 
           {control.label}
           {control.hint && <small>{control.hint}</small>}
         </span>
-        <ValueField label={label} degrees={degrees} still={scrubbing} onApply={apply} onCommit={commitEdit} onReport={onReport} />
+        <ValueField label={label} value={value} suffix={suffix} still={scrubbing} onApply={apply} onCommit={commitEdit} onReport={onReport} />
       </div>
       <input
         ref={rangeRef}
@@ -130,8 +131,8 @@ export function JointRow({ group, control, pose, editPose, commitEdit, onReport 
         onChange={(e) => apply(e.target.valueAsNumber)}
       />
       <div className="joint-limits" aria-hidden="true">
-        <span>{min}°</span>
-        <span>{max}°</span>
+        <span>{`${min}${suffix}`}</span>
+        <span>{`${max}${suffix}`}</span>
       </div>
     </div>
   );

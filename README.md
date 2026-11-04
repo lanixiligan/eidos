@@ -15,13 +15,15 @@ where they are used. You can use Eidos on its own for any hand poses.
   numbers and every angle sit in split-flap cells that flip into place when
   they change.
 - **Pose editor:** name the pose in the top bar, pick a finger (Thumb …
-  Pinky, or Hand for the hand rotation) and set its joints. Angles are shown
+  Pinky, or Hand for the whole hand) and set its joints. Angles are shown
   in degrees; signed angles name their positive direction (`+ pinky`). Click
   a number on the hand to jump to that finger.
 - **The letter board:** letters and saved poses as board rows (code, pose,
   state); the open one is highlighted, and ← and → step through them.
-- **Hand rotation:** turn, tilt and twist the whole hand, stored in the pose,
-  for poses that point sideways or down.
+- **Hand rotation and position:** turn, tilt and twist the whole hand, for
+  poses that point sideways or down, and move it out or in, up or down,
+  forward or back (in hundredths of a hand length). Both are stored in the
+  pose.
 - **A slider per joint**, with its range shown underneath. Click an angle
   to type it exactly, past the slider's ends too (poses have no limits), or
   step it with the up and down keys (5°, Shift for 1°). These keys are
