@@ -1,6 +1,6 @@
 import { useEffect, useEffectEvent, useRef } from 'react';
 import { createHand } from '../hand.js';
-import { FINGER_NUMBERS } from '../pose.js';
+import { FINGER_NUMBERS, stillPose } from '../pose.js';
 
 function stopTimers(timers) {
   timers.forEach(clearTimeout);
@@ -33,7 +33,7 @@ export function useHand(stageRef, { pose, mode, side, numbers, onTipClick }) {
   useEffect(() => handRef.current.setSide(side), [side]);
   useEffect(() => handRef.current.setNumbersVisible(numbers), [numbers]);
 
-  // Showing the pose being edited stops a transition preview
+  // Showing the pose being edited stops a preview
   useEffect(() => {
     stopTimers(previewTimers.current);
     handRef.current.setPose(pose);
@@ -55,6 +55,19 @@ export function useHand(stageRef, { pose, mode, side, numbers, onTipClick }) {
       timers.push(
         setTimeout(() => hand.setPose(to, { duration }), 500),
         setTimeout(() => hand.setPose(pose), 500 + duration + 1500)
+      );
+    },
+    // Show the first step, play the movement through, hold the last step,
+    // then return to the pose being edited (unless something cut it short)
+    playMotion(document) {
+      const hand = handRef.current;
+      const timers = previewTimers.current;
+      stopTimers(timers);
+      hand.setPose(stillPose(document), { instant: true });
+      timers.push(
+        setTimeout(async () => {
+          if (await hand.playMotion(document)) timers.push(setTimeout(() => hand.setPose(pose), 1500));
+        }, 500)
       );
     },
   };

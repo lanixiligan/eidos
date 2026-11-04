@@ -1,26 +1,65 @@
 import { useMemo, useReducer } from 'react';
-import { clonePose } from '../pose.js';
+import { clonePose, stillPose } from '../pose.js';
 
 const HISTORY_LIMIT = 100;
+// How long a new movement step takes to reach, from the step before (ms)
+export const NEW_STEP_DURATION = 400;
 
 const samePose = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const stepCount = (pose) => 1 + (pose.motion?.length ?? 0);
+const clampStep = (pose, step) => Math.min(step, stepCount(pose) - 1);
 
-// The pose being edited, the library button it came from (null once it is
-// edited by hand), and undo / redo snapshots taken whenever an edit is
-// finished. Poses in this state are never mutated, only replaced.
+// The fields of step `i` in a (cloned) pose, to write into: the pose itself
+// for the first step, else that step of its motion
+const stepFields = (pose, i) => (i === 0 ? pose : pose.motion[i - 1].pose);
+
+// The pose being edited (with its movement steps, if any), the step shown
+// and edited, the library button it came from (null once it is edited by
+// hand), and undo / redo snapshots taken whenever an edit is finished.
+// Poses in this state are never mutated, only replaced.
 function reducer(state, action) {
   switch (action.type) {
     case 'select':
-      return { ...state, pose: clonePose(action.pose), active: action.key };
+      return { ...state, pose: clonePose(action.pose), step: 0, active: action.key };
     case 'edit': {
       const pose = clonePose(state.pose);
-      action.change(pose);
+      action.change(stepFields(pose, state.step));
       return { ...state, pose, active: null };
     }
     case 'load':
-      return { ...state, pose: clonePose(action.pose), active: null };
+      return { ...state, pose: clonePose(action.pose), step: 0, active: null };
     case 'mark':
       return { ...state, active: action.key };
+    case 'show':
+      return { ...state, step: Math.max(0, clampStep(state.pose, action.step)) };
+    case 'addStep': {
+      // A copy of the shown step, right after it, to change from there
+      const pose = clonePose(state.pose);
+      const copy = stillPose(stepFields(pose, state.step));
+      pose.motion = pose.motion ?? [];
+      pose.motion.splice(state.step, 0, { duration: NEW_STEP_DURATION, pose: copy });
+      return { ...state, pose, step: state.step + 1, active: null };
+    }
+    case 'deleteStep': {
+      if (stepCount(state.pose) < 2) return state;
+      const pose = clonePose(state.pose);
+      if (state.step === 0) {
+        // The second step becomes the first; its time from the first goes
+        const [next, ...rest] = pose.motion;
+        Object.assign(pose, next.pose);
+        pose.motion = rest;
+      } else {
+        pose.motion.splice(state.step - 1, 1);
+      }
+      if (!pose.motion.length) delete pose.motion;
+      return { ...state, pose, step: Math.max(0, state.step - 1), active: null };
+    }
+    case 'retime': {
+      if (state.step === 0) return state;
+      const pose = clonePose(state.pose);
+      pose.motion[state.step - 1].duration = action.duration;
+      return { ...state, pose, active: null };
+    }
     case 'commit':
       if (samePose(state.pose, state.committed)) return state;
       return {
@@ -37,6 +76,7 @@ function reducer(state, action) {
       return {
         ...state,
         pose,
+        step: clampStep(pose, state.step),
         active: null,
         committed: pose,
         [from]: state[from].slice(0, -1),
@@ -50,35 +90,49 @@ function reducer(state, action) {
 
 function initialState(initialPose) {
   const pose = clonePose(initialPose);
-  return { pose, active: null, committed: pose, undo: [], redo: [] };
+  return { pose, step: 0, active: null, committed: pose, undo: [], redo: [] };
 }
 
 // Every edit made by hand goes through editPose(change) (or loadPose(pose)),
 // which clears the selected library button. A finished edit calls
-// commitEdit(), which adds one undo step.
+// commitEdit(), which adds one undo step. `pose` is the step shown (a still
+// pose), `document` the whole pose with its movement, for files and saving.
 export function usePoseEditor(initialPose) {
   const [state, dispatch] = useReducer(reducer, initialPose, initialState);
   const actions = useMemo(
     () => ({
       /** Start from a library pose and show its button as selected. */
       selectPose: (key, pose) => dispatch({ type: 'select', key, pose }),
-      /** Change some fields: `change` gets a copy of the pose to write into. */
+      /** Change some fields of the shown step: `change` gets a copy to write into. */
       editPose: (change) => dispatch({ type: 'edit', change }),
-      /** Replace the whole pose (import, paste, reset). */
+      /** Replace the whole pose, movement and all (import, paste). */
       loadPose: (pose) => dispatch({ type: 'load', pose }),
       /** Show a library button as selected, without changing the pose. */
       markActive: (key) => dispatch({ type: 'mark', key }),
+      /** Show and edit movement step `step` (0 is the first). */
+      showStep: (step) => dispatch({ type: 'show', step }),
+      /** Add a copy of the shown step after it, and show that. */
+      addStep: () => dispatch({ type: 'addStep' }),
+      /** Delete the shown step (the last one left stays). */
+      deleteStep: () => dispatch({ type: 'deleteStep' }),
+      /** Set how long the shown step takes to reach from the one before (ms). */
+      retimeStep: (duration) => dispatch({ type: 'retime', duration }),
       commitEdit: () => dispatch({ type: 'commit' }),
       undo: () => dispatch({ type: 'undo' }),
       redo: () => dispatch({ type: 'redo' }),
     }),
     []
   );
+  // A new object only when the pose or the shown step changes, since the
+  // hand eases to it whenever it does
+  const shown = useMemo(() => stillPose(stepFields(state.pose, state.step)), [state.pose, state.step]);
   return {
-    pose: state.pose,
-    active: state.active,
+    pose: shown,
+    document: state.pose,
+    step: state.step,
     canUndo: state.undo.length > 0,
     canRedo: state.redo.length > 0,
+    active: state.active,
     ...actions,
   };
 }

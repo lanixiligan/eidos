@@ -45,10 +45,17 @@ export function Library({ active, letters, lettersStatus, saved, onSelect, onDel
             Letters
           </h2>
           <ul className="board">
-            {letters.map(({ name }) => {
+            {letters.map(({ name, pose }) => {
               const key = LETTER_PREFIX + name;
               return (
-                <Row key={key} code={name} label={`Letter ${name}`} state="Ready" open={active === key} onSelect={() => onSelect(key)} />
+                <Row
+                  key={key}
+                  code={name}
+                  label={`Letter ${name}`}
+                  state={pose.motion ? 'Moves' : 'Ready'}
+                  open={active === key}
+                  onSelect={() => onSelect(key)}
+                />
               );
             })}
           </ul>
@@ -70,7 +77,7 @@ export function Library({ active, letters, lettersStatus, saved, onSelect, onDel
                     key={key}
                     code={String(i + 1).padStart(2, '0')}
                     label={name}
-                    state="Saved"
+                    state={saved[name].motion ? 'Moves' : 'Saved'}
                     open={active === key}
                     onSelect={() => onSelect(key)}
                   >

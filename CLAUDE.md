@@ -27,11 +27,13 @@ stands on its own: Sema is a use case and never part of the product's name.
   state, mode), `Library` (the letter board, with Import and Export all),
   `Stage` (status strip, the toolbar with undo, redo, Save and the view
   controls, and `TransitionPopover`) and
-  `PoseEditor` (`JointRow`, `FileActions`). `Flap` sets text in split-flap
+  `PoseEditor` (`JointRow`, `MotionPanel` for the movement steps,
+  `FileActions`). `Flap` sets text in split-flap
   cells for all of them.
 - `src/fonts/`: Barlow and Barlow Condensed (SIL OFL, `OFL.txt`), served with
   the page so nothing loads from a font host.
-- `src/hooks/`: `usePoseEditor` (the pose being edited, with undo and redo),
+- `src/hooks/`: `usePoseEditor` (the pose being edited, with undo and redo,
+  and which of its movement steps the tabs edit),
   `useHand` (creates the 3D hand and keeps it in sync with React state) and
   `useCommitEvent`.
 - `src/lib/`: plain modules: joint controls and angle math (`joints.js`), the
@@ -80,7 +82,10 @@ ends.
 - The editor shows degrees and stores radians. Signed angles name their
   positive direction (`+ pinky`). Wrist angles wrap into ±180°.
 - Every edit made by hand goes through `editPose(change)` or `loadPose(pose)`
-  from `usePoseEditor`, which clear the selected library button. A finished
+  from `usePoseEditor` (or its step actions), which clear the selected
+  library button. `editPose` changes the step shown: `editor.pose` is that
+  step, `editor.document` the whole pose with its `motion`, for files and
+  saving. A finished
   edit calls `commitEdit()`, which adds one undo step. Poses in that state are
   replaced, never mutated.
 - The 3D hand is outside React. Components reach it only through `useHand`,
