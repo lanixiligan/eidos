@@ -50,10 +50,10 @@ function StepTime({ step, duration, onRetime, onCommit }) {
 }
 
 // The Motion tab: the steps of a movement, as board rows. The shown step is
-// the one the other tabs edit; Add step copies it to change from there, and
-// Play runs through every step.
+// the one the other tabs edit; Add step copies the last step to change from
+// there, Clone the shown one, and Play runs through every step.
 export function MotionPanel({ editor, onPlay }) {
-  const { document: pose, step, showStep, addStep, deleteStep, retimeStep, commitEdit } = editor;
+  const { document: pose, step, showStep, addStep, cloneStep, moveStep, deleteStep, retimeStep, commitEdit } = editor;
   const steps = motionSteps(pose);
   const moves = steps.length > 1;
 
@@ -65,11 +65,32 @@ export function MotionPanel({ editor, onPlay }) {
   return (
     <>
       <div className="finger-actions">
-        <button className="link-btn" type="button" title="Copy the shown step after it, to change from there" onClick={() => run(addStep)}>
+        <button className="link-btn" type="button" title="Copy the last step to the end, to change from there" onClick={() => run(addStep)}>
           Add step
         </button>
+        <button className="link-btn" type="button" title="Copy the shown step right after it" onClick={() => run(cloneStep)}>
+          Clone step {step + 1}
+        </button>
         <button className="link-btn" type="button" title="Delete the shown step" disabled={!moves} onClick={() => run(deleteStep)}>
-          Delete step {step + 1}
+          Delete
+        </button>
+        <button
+          className="link-btn"
+          type="button"
+          title="Swap the shown step with the one before it"
+          disabled={step === 0}
+          onClick={() => run(() => moveStep(-1))}
+        >
+          Move up
+        </button>
+        <button
+          className="link-btn"
+          type="button"
+          title="Swap the shown step with the one after it"
+          disabled={step === steps.length - 1}
+          onClick={() => run(() => moveStep(1))}
+        >
+          Move down
         </button>
       </div>
 
@@ -104,7 +125,7 @@ export function MotionPanel({ editor, onPlay }) {
 
       <p className="editor-help">
         {moves
-          ? 'Pick a step to show it; the finger and Hand tabs edit the step shown. Add step copies it to the next step.'
+          ? 'Pick a step to show it; the finger and Hand tabs edit the step shown. Add step copies the last step to the end, Clone copies the shown one after it, and Move up and down swap it with its neighbour.'
           : 'Shape the hand where the movement starts, then Add step and change the copy, once for each step.'}{' '}
         Play moves through the steps on one smooth path.
       </p>

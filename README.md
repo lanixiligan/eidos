@@ -25,10 +25,11 @@ where they are used. You can use Eidos on its own for any hand poses.
   forward or back (in hundredths of a hand length). Both are stored in the
   pose.
 - **Movement steps:** for signs that move, such as J and Z, the Motion tab
-  lists the steps of the movement. **Add step** copies the shown step so you
-  can change it with the other tabs, each step has its time from the one
-  before (0.1–2 s), and **Play movement** runs through them on one smooth
-  path. Letters and saved poses that move read *Moves* on the board.
+  lists the steps of the movement. **Add step** copies the last step to the
+  end so you can change it with the other tabs, **Clone** copies the shown
+  step right after it, and **Move up** and **Move down** swap it with its
+  neighbour. Each step has its time from the one before (0.1–2 s), and
+  **Play movement** runs through them on one smooth path. Letters and saved poses that move read *Moves* on the board.
 - **A slider per joint**, with its range shown underneath. Click an angle
   to type it exactly, past the slider's ends too (poses have no limits), or
   step it with the up and down keys (5°, Shift for 1°). These keys are
